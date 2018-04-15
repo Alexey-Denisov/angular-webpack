@@ -8,6 +8,7 @@ var autoprefixer = require('autoprefixer');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
 var CopyWebpackPlugin = require('copy-webpack-plugin');
+var AotPlugin = require('@ngtools/webpack').AotPlugin;
 
 /**
  * Env
@@ -16,7 +17,8 @@ var CopyWebpackPlugin = require('copy-webpack-plugin');
 var ENV = process.env.npm_lifecycle_event;
 var isTestWatch = ENV === 'test-watch';
 var isTest = ENV === 'test' || isTestWatch;
-var isProd = ENV === 'build';
+var isProd = ENV === 'build:prod';
+var isDev = ENV === 'build';
 
 module.exports = function makeWebpackConfig() {
   /**
@@ -90,7 +92,7 @@ module.exports = function makeWebpackConfig() {
       // Support for .ts files.
       {
         test: /\.ts$/,
-        loaders: ['awesome-typescript-loader?' + atlOptions, 'angular2-template-loader', '@angularclass/hmr-loader'],
+        loaders: isProd ? ['@ngtools/webpack'] : ['awesome-typescript-loader?' + atlOptions, 'angular2-template-loader', '@angularclass/hmr-loader'],
         exclude: [isTest ? /\.(e2e)\.ts$/ : /\.(spec|e2e)\.ts$/, /node_modules\/(?!(ng2-.+))/]
       },
 
@@ -230,11 +232,27 @@ module.exports = function makeWebpackConfig() {
   }
 
   // Add build specific plugins
-  if (isProd) {
+  if (isProd || isDev) {
     config.plugins.push(
       // Reference: http://webpack.github.io/docs/list-of-plugins.html#noerrorsplugin
       // Only emit files when there are no errors
       new webpack.NoEmitOnErrorsPlugin(),
+
+      // Copy assets from the public folder
+      // Reference: https://github.com/kevlened/copy-webpack-plugin
+      new CopyWebpackPlugin([{
+        from: root('src/public')
+      }])
+    );
+  }
+  
+  if (isProd) {
+    config.plugins.push(
+
+      new AotPlugin({
+        tsConfigPath: './tsconfig.json',
+        entryModule: root('src/app/app.module#AppModule')
+      }),
 
       // // Reference: http://webpack.github.io/docs/list-of-plugins.html#dedupeplugin
       // // Dedupe modules in the output
@@ -242,13 +260,7 @@ module.exports = function makeWebpackConfig() {
 
       // Reference: http://webpack.github.io/docs/list-of-plugins.html#uglifyjsplugin
       // Minify all javascript, switch loaders to minimizing mode
-      new webpack.optimize.UglifyJsPlugin({sourceMap: true, mangle: { keep_fnames: true }}),
-
-      // Copy assets from the public folder
-      // Reference: https://github.com/kevlened/copy-webpack-plugin
-      new CopyWebpackPlugin([{
-        from: root('src/public')
-      }])
+      new webpack.optimize.UglifyJsPlugin({sourceMap: true, mangle: { keep_fnames: true }})
     );
   }
 

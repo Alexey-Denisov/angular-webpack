@@ -4,10 +4,12 @@ import { HttpModule } from '@angular/http';
 import { FormsModule } from '@angular/forms';
 
 import { AppComponent } from './app.component';
-import { HomeComponent } from './home/home.component';
-import { AboutComponent } from './about/about.component';
-import { ApiService } from './shared';
+import { HomeComponent } from './components/pages/home/home.component';
+import { AboutComponent } from './components/pages/about/about.component';
 import { routing } from './app.routing';
+
+import { AuthDataProvider } from './dataproviders';
+import { HttpService } from './services';
 
 import { removeNgStyles, createNewHosts } from '@angularclass/hmr';
 
@@ -24,10 +26,16 @@ import { removeNgStyles, createNewHosts } from '@angularclass/hmr';
     AboutComponent
   ],
   providers: [
-    ApiService
+    HttpService,
+    AuthDataProvider
   ],
   bootstrap: [AppComponent]
 })
+
+/**
+ * Entry point of application.
+ *
+ */
 export class AppModule {
   constructor(public appRef: ApplicationRef) {}
   hmrOnInit(store) {
